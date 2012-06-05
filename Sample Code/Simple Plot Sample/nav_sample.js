@@ -51,30 +51,30 @@ function calcRoute() {
         markerArray[i].setMap(null);
     }
 
+    var route_type = "cheapest";
+
     //read json data file
     $.getJSON('sampledata.json', function (data) {
 
-        var turnsArray = [];
+        //set title div text
+        var fromText = data["data"]["from"];
+        var toText = data["data"]["to"];
+        document.getElementById("title").innerText = "From " + fromText + " to " + toText;
 
-        $.each(data.data.route.cheapest, function (key, val) {
-            //get start and end coords
-            if (key == "coords") {
-                var mainCoords = val.replace(/,/g, ' ').split(' ');  
-                var l = mainCoords.length;
-                start = new google.maps.LatLng(parseFloat(mainCoords[1]), parseFloat(mainCoords[0]));
-                end = new google.maps.LatLng(parseFloat(mainCoords[l-1]), parseFloat(mainCoords[l-2]));
-            }
+        var routeData = data["data"]["route"][route_type];
 
-            if (key == "turns") {
-                turnsArray = val;
-            }            
-        });
+        //get start and end coords
+        var routeDataCoords = routeData["coords"];
+        var mainCoords = routeDataCoords.replace(/,/g, ' ').split(' ');  
+        var l = mainCoords.length;
+        start = new google.maps.LatLng(parseFloat(mainCoords[1]), parseFloat(mainCoords[0]));
+        end = new google.maps.LatLng(parseFloat(mainCoords[l-1]), parseFloat(mainCoords[l-2]));
 
         //create new routeObject with start and end variables
         var route = new routeObject(start, end);
 
         //for each turn in object
-        $.each(turnsArray, function (key, val) {
+        $.each(routeData["turns"], function (key, val) {
 
             //distance of step
             var dist = val["dist"];
@@ -110,6 +110,8 @@ function showSteps(myRoute) {
     // info window. Also attach the marker to an array so we
     // can keep track of it and remove it when calculating new
     // routes.
+    var dirArray = [];
+    var dirHTML = document.createElement('ol');
 
     for (var i = 0; i < myRoute.steps.length; i++) {
         var marker = new google.maps.Marker({
@@ -117,7 +119,10 @@ function showSteps(myRoute) {
             map: map,
         });
 
-        attachInstructionText(marker, myRoute.steps[i].instructions);
+        var instrText = myRoute.steps[i].instructions + "\n" + myRoute.steps[i].distance + "km";
+        attachInstructionText(marker, instrText);
+        dirArray.push(instrText);
+
         markerArray[i] = marker;
 
         //set PolyLineOptions
@@ -131,6 +136,15 @@ function showSteps(myRoute) {
 
         poly.setPath(myRoute.steps[i].pathCoordinates);
     }
+
+
+    for(var i=0; i<dirArray.length; i++){
+        var node = document.createElement('li');
+        node.innerText = dirArray[i] + "\n \n";
+        dirHTML.appendChild(node);
+    }
+
+    document.getElementById("directions").appendChild(dirHTML);
 }
 
 //Value of String of Instruction
